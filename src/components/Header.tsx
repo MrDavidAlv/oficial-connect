@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Moon, Sun, Plus, Minus, Contrast, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/ThemeProvider";
+import { Link, useLocation } from "react-router-dom";
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
+  const location = useLocation();
   const [fontSize, setFontSize] = useState(16);
   const [highContrast, setHighContrast] = useState(false);
 
@@ -50,18 +52,38 @@ export const Header = () => {
 
           {/* Navegación principal */}
           <nav className="hidden md:flex items-center space-x-6">
-            <a href="#" className="text-primary-foreground hover:text-primary-foreground/80 transition-colors">
+            <Link 
+              to="/" 
+              className={`text-primary-foreground hover:text-primary-foreground/80 transition-colors ${
+                location.pathname === '/' ? 'font-semibold border-b-2 border-primary-foreground/50' : ''
+              }`}
+            >
               Inicio
-            </a>
-            <a href="#" className="text-primary-foreground hover:text-primary-foreground/80 transition-colors">
+            </Link>
+            <Link 
+              to="/publicaciones" 
+              className={`text-primary-foreground hover:text-primary-foreground/80 transition-colors ${
+                location.pathname === '/publicaciones' ? 'font-semibold border-b-2 border-primary-foreground/50' : ''
+              }`}
+            >
               Publicaciones
-            </a>
-            <a href="#" className="text-primary-foreground hover:text-primary-foreground/80 transition-colors">
+            </Link>
+            <Link 
+              to="/estadisticas" 
+              className={`text-primary-foreground hover:text-primary-foreground/80 transition-colors ${
+                location.pathname === '/estadisticas' ? 'font-semibold border-b-2 border-primary-foreground/50' : ''
+              }`}
+            >
               Estadísticas
-            </a>
-            <a href="#" className="text-primary-foreground hover:text-primary-foreground/80 transition-colors">
+            </Link>
+            <Link 
+              to="/ayuda" 
+              className={`text-primary-foreground hover:text-primary-foreground/80 transition-colors ${
+                location.pathname === '/ayuda' ? 'font-semibold border-b-2 border-primary-foreground/50' : ''
+              }`}
+            >
               Ayuda
-            </a>
+            </Link>
           </nav>
 
           {/* Herramientas de accesibilidad */}

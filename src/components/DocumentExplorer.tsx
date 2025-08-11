@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PDFViewer } from "@/components/PDFViewer";
+import { toast } from "sonner";
 
 interface Document {
   id: string;
@@ -17,52 +19,58 @@ interface Document {
   tipoNorma: string;
   entidadEmisora: string;
   estado: "publicado" | "borrador" | "archivado";
+  pdfUrl: string;
 }
 
 const mockDocuments: Document[] = [
   {
     id: "1",
     numeroDiario: "52.345",
-    titulo: "Decreto 1234 de 2024 - Reglamentación del Sistema Nacional de Salud",
+    titulo: "Constitución Política de Colombia 1991",
     fechaPublicacion: "2024-01-15",
     tamaño: "2.5 MB",
-    numeroPaginas: 45,
+    numeroPaginas: 195,
     año: 2024,
-    descripcion: "Establece las nuevas normativas para el funcionamiento del sistema nacional de salud y sus entidades adscritas.",
-    tipoNorma: "DECRETO",
-    entidadEmisora: "Ministerio de Salud",
-    estado: "publicado"
+    descripcion: "Constitución Política de la República de Colombia promulgada en 1991, documento fundamental del Estado colombiano.",
+    tipoNorma: "CONSTITUCIÓN",
+    entidadEmisora: "Asamblea Nacional Constituyente",
+    estado: "publicado",
+    pdfUrl: "https://pdba.georgetown.edu/Constitutions/Colombia/colombia91.pdf"
   },
   {
     id: "2",
     numeroDiario: "52.344",
-    titulo: "Resolución 567 de 2024 - Lineamientos de Educación Digital",
+    titulo: "Lineamientos Generales de Política para el Sector de las Tecnologías de la Información",
     fechaPublicacion: "2024-01-14",
     tamaño: "1.8 MB",
-    numeroPaginas: 28,
+    numeroPaginas: 89,
     año: 2024,
-    descripcion: "Define los lineamientos para la implementación de herramientas digitales en instituciones educativas.",
-    tipoNorma: "RESOLUCIÓN",
-    entidadEmisora: "Ministerio de Educación",
-    estado: "publicado"
+    descripcion: "Documento que establece los lineamientos generales de política para el desarrollo del sector de las tecnologías de la información y las comunicaciones.",
+    tipoNorma: "LINEAMIENTOS",
+    entidadEmisora: "Ministerio de Educación Nacional",
+    estado: "publicado",
+    pdfUrl: "https://www.mineducacion.gov.co/1621/articles-85906_archivo_pdf.pdf"
   },
   {
     id: "3",
     numeroDiario: "52.343",
-    titulo: "Ley 89 de 2024 - Ley de Protección de Datos Personales",
+    titulo: "Código Penal de Colombia",
     fechaPublicacion: "2024-01-13",
     tamaño: "3.2 MB",
-    numeroPaginas: 67,
+    numeroPaginas: 234,
     año: 2024,
-    descripcion: "Establece el marco legal para la protección de datos personales y la privacidad de los ciudadanos.",
-    tipoNorma: "LEY",
+    descripcion: "Código Penal de la República de Colombia - Ley 599 de 2000, que establece las normas rectoras del derecho penal colombiano.",
+    tipoNorma: "CÓDIGO",
     entidadEmisora: "Congreso de la República",
-    estado: "publicado"
+    estado: "publicado",
+    pdfUrl: "https://www.oas.org/dil/esp/codigo_penal_colombia.pdf"
   }
 ];
 
 export const DocumentExplorer = () => {
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [isPDFViewerOpen, setIsPDFViewerOpen] = useState(false);
 
   const getStatusColor = (estado: string) => {
     switch (estado) {
@@ -78,18 +86,31 @@ export const DocumentExplorer = () => {
   };
 
   const handleView = (doc: Document) => {
-    console.log("Ver documento:", doc.id);
-    // Aquí iría la lógica para abrir el visor PDF
+    setSelectedDocument(doc);
+    setIsPDFViewerOpen(true);
   };
 
   const handleDownload = (doc: Document) => {
-    console.log("Descargar documento:", doc.id);
-    // Aquí iría la lógica de descarga
+    const link = document.createElement('a');
+    link.href = doc.pdfUrl;
+    link.download = `${doc.titulo}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Descarga iniciada");
   };
 
   const handleShare = (doc: Document) => {
-    console.log("Compartir documento:", doc.id);
-    // Aquí iría la lógica de compartir
+    if (navigator.share) {
+      navigator.share({
+        title: doc.titulo,
+        text: doc.descripcion,
+        url: doc.pdfUrl,
+      });
+    } else {
+      navigator.clipboard.writeText(doc.pdfUrl);
+      toast.success("URL copiada al portapapeles");
+    }
   };
 
   if (viewMode === "cards") {
@@ -182,6 +203,16 @@ export const DocumentExplorer = () => {
             </Card>
           ))}
         </div>
+
+        {/* Visor PDF */}
+        {selectedDocument && (
+          <PDFViewer
+            isOpen={isPDFViewerOpen}
+            onClose={() => setIsPDFViewerOpen(false)}
+            documentUrl={selectedDocument.pdfUrl}
+            documentTitle={selectedDocument.titulo}
+          />
+        )}
       </div>
     );
   }
@@ -286,6 +317,16 @@ export const DocumentExplorer = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Visor PDF */}
+      {selectedDocument && (
+        <PDFViewer
+          isOpen={isPDFViewerOpen}
+          onClose={() => setIsPDFViewerOpen(false)}
+          documentUrl={selectedDocument.pdfUrl}
+          documentTitle={selectedDocument.titulo}
+        />
+      )}
     </div>
   );
 };
