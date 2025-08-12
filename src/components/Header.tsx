@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { Moon, Sun, Plus, Minus, Contrast, Menu } from "lucide-react";
+import { Moon, Sun, Plus, Minus, Contrast, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
 import { Link, useLocation } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 export const Header = () => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [fontSize, setFontSize] = useState(16);
   const [highContrast, setHighContrast] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const increaseFontSize = () => {
     if (fontSize < 24) {
@@ -37,10 +39,10 @@ export const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo e identidad */}
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-card rounded-lg flex items-center justify-center shadow-soft">
-              <span className="text-2xl font-bold text-primary">DO</span>
+            <div className="w-12 h-12 bg-card rounded-lg flex items-center justify-center shadow-soft overflow-hidden">
+              <img src={logo} alt="Logo" className="w-10 h-auto object-contain" />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-primary-foreground">
                 Diario Oficial
               </h1>
@@ -145,11 +147,56 @@ export const Header = () => {
               size="sm"
               className="md:hidden h-8 w-8 p-0 text-primary-foreground hover:bg-card/20"
               aria-label="Menú"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <Menu className="h-4 w-4" />
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
           </div>
         </div>
+        
+        {/* Menú móvil desplegable */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border/20 bg-card/10 backdrop-blur-sm">
+            <nav className="flex flex-col space-y-1 p-4">
+              <Link 
+                to="/" 
+                className={`text-primary-foreground hover:text-primary-foreground/80 transition-colors py-2 px-3 rounded ${
+                  location.pathname === '/' ? 'font-semibold bg-card/20' : ''
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Inicio
+              </Link>
+              <Link 
+                to="/publicaciones" 
+                className={`text-primary-foreground hover:text-primary-foreground/80 transition-colors py-2 px-3 rounded ${
+                  location.pathname === '/publicaciones' ? 'font-semibold bg-card/20' : ''
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Publicaciones
+              </Link>
+              <Link 
+                to="/estadisticas" 
+                className={`text-primary-foreground hover:text-primary-foreground/80 transition-colors py-2 px-3 rounded ${
+                  location.pathname === '/estadisticas' ? 'font-semibold bg-card/20' : ''
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Estadísticas
+              </Link>
+              <Link 
+                to="/ayuda" 
+                className={`text-primary-foreground hover:text-primary-foreground/80 transition-colors py-2 px-3 rounded ${
+                  location.pathname === '/ayuda' ? 'font-semibold bg-card/20' : ''
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Ayuda
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

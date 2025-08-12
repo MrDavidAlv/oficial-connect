@@ -1,15 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   ZoomIn, 
   ZoomOut, 
   ChevronLeft, 
   ChevronRight, 
   Download, 
-  Maximize, 
+  Minimize, 
   Search,
   Volume2,
   X
@@ -30,9 +29,8 @@ interface PDFViewerProps {
 export const PDFViewer = ({ isOpen, onClose, documentUrl, documentTitle }: PDFViewerProps) => {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.2);
+  const [scale, setScale] = useState(1.0);
   const [searchText, setSearchText] = useState("");
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -61,9 +59,18 @@ export const PDFViewer = ({ isOpen, onClose, documentUrl, documentTitle }: PDFVi
     setScale(prev => Math.max(0.5, prev - 0.2));
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
+  // Bloquear el scroll del body cuando el viewer está abierto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const handleDownload = () => {
     const link = document.createElement('a');
@@ -92,113 +99,109 @@ export const PDFViewer = ({ isOpen, onClose, documentUrl, documentTitle }: PDFVi
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className={`${isFullscreen ? 'max-w-[100vw] h-[100vh] m-0' : 'max-w-6xl max-h-[90vh]'} p-0`}
-      >
-        <DialogHeader className="p-4 border-b">
-          <DialogTitle className="flex items-center justify-between">
-            <span className="text-lg font-semibold truncate mr-4">{documentTitle}</span>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTitle>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      {/* Header con título y controles */}
+      <div className="flex items-center justify-between p-4 border-b bg-card shadow-sm">
+        <h1 className="text-lg font-semibold text-foreground truncate mr-4">
+          {documentTitle}
+        </h1>
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
 
-        {/* Barra de herramientas */}
-        <div className="flex items-center justify-between p-4 border-b bg-muted/30">
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={goToPrevPage} disabled={pageNumber <= 1}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            
-            <span className="text-sm font-medium">
-              Página {pageNumber} de {numPages || '...'}
-            </span>
-            
-            <Button variant="outline" size="sm" onClick={goToNextPage} disabled={!numPages || pageNumber >= numPages}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-1">
-              <Input
-                placeholder="Buscar en documento..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                className="w-48 h-8"
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              />
-              <Button variant="outline" size="sm" onClick={handleSearch}>
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="flex items-center space-x-1">
-              <Button variant="outline" size="sm" onClick={zoomOut}>
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium px-2">{Math.round(scale * 100)}%</span>
-              <Button variant="outline" size="sm" onClick={zoomIn}>
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <Button variant="outline" size="sm" onClick={speakText} title="Lectura en voz alta">
-              <Volume2 className="h-4 w-4" />
-            </Button>
-
-            <Button variant="outline" size="sm" onClick={handleDownload} title="Descargar">
-              <Download className="h-4 w-4" />
-            </Button>
-
-            <Button variant="outline" size="sm" onClick={toggleFullscreen}>
-              <Maximize className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* Barra de herramientas */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border-b bg-muted/30 gap-4">
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={goToPrevPage} disabled={pageNumber <= 1}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <span className="text-sm font-medium whitespace-nowrap">
+            Página {pageNumber} de {numPages || '...'}
+          </span>
+          
+          <Button variant="outline" size="sm" onClick={goToNextPage} disabled={!numPages || pageNumber >= numPages}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* Contenedor del PDF */}
-        <div className="flex-1 overflow-auto p-4 bg-gray-100 dark:bg-gray-900">
-          <div className="flex justify-center">
-            <div className="bg-white shadow-lg">
-              <Document
-                file={documentUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+          <div className="flex items-center space-x-1 w-full sm:w-auto">
+            <Input
+              placeholder="Buscar en documento..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="w-full sm:w-48 h-8"
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <Button variant="outline" size="sm" onClick={handleSearch}>
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center space-x-1">
+            <Button variant="outline" size="sm" onClick={zoomOut}>
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium px-2">{Math.round(scale * 100)}%</span>
+            <Button variant="outline" size="sm" onClick={zoomIn}>
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Button variant="outline" size="sm" onClick={speakText} title="Lectura en voz alta">
+            <Volume2 className="h-4 w-4" />
+          </Button>
+
+          <Button variant="outline" size="sm" onClick={handleDownload} title="Descargar">
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Contenedor del PDF */}
+      <div className="flex-1 overflow-auto bg-muted/20">
+        <div className="flex justify-center p-4">
+          <div className="bg-white shadow-lg max-w-full">
+            <Document
+              file={documentUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
+              loading={
+                <div className="flex items-center justify-center h-96 w-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p>Cargando documento...</p>
+                  </div>
+                </div>
+              }
+              error={
+                <div className="flex items-center justify-center h-96 w-full">
+                  <div className="text-center text-destructive">
+                    <p className="text-lg font-semibold">Error al cargar el documento</p>
+                    <p className="text-sm">Por favor, verifica la URL del documento</p>
+                  </div>
+                </div>
+              }
+            >
+              <Page
+                pageNumber={pageNumber}
+                scale={scale}
                 loading={
-                  <div className="flex items-center justify-center h-96">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                      <p>Cargando documento...</p>
-                    </div>
+                  <div className="flex items-center justify-center h-96 w-full">
+                    <div className="animate-pulse bg-gray-200 h-full w-full rounded"></div>
                   </div>
                 }
-                error={
-                  <div className="flex items-center justify-center h-96">
-                    <div className="text-center text-red-600">
-                      <p className="text-lg font-semibold">Error al cargar el documento</p>
-                      <p className="text-sm">Por favor, verifica la URL del documento</p>
-                    </div>
-                  </div>
-                }
-              >
-                <Page
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  loading={
-                    <div className="flex items-center justify-center h-96">
-                      <div className="animate-pulse bg-gray-200 h-full w-full rounded"></div>
-                    </div>
-                  }
-                />
-              </Document>
-            </div>
+                width={Math.min(window.innerWidth - 32, 800 * scale)}
+              />
+            </Document>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };

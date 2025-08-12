@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 import { PDFViewer } from "@/components/PDFViewer";
 import { toast } from "sonner";
 
@@ -71,6 +72,14 @@ export const DocumentExplorer = () => {
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isPDFViewerOpen, setIsPDFViewerOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const documentsPerPage = 5;
+  
+  // Calcular documentos para la página actual
+  const indexOfLastDocument = currentPage * documentsPerPage;
+  const indexOfFirstDocument = indexOfLastDocument - documentsPerPage;
+  const currentDocuments = mockDocuments.slice(indexOfFirstDocument, indexOfLastDocument);
+  const totalPages = Math.ceil(mockDocuments.length / documentsPerPage);
 
   const getStatusColor = (estado: string) => {
     switch (estado) {
@@ -137,7 +146,7 @@ export const DocumentExplorer = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {mockDocuments.map((doc) => (
+          {currentDocuments.map((doc) => (
             <Card key={doc.id} className="shadow-soft hover:shadow-medium transition-shadow">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-3">
@@ -204,6 +213,48 @@ export const DocumentExplorer = () => {
           ))}
         </div>
 
+        {/* Paginación */}
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage > 1) setCurrentPage(currentPage - 1);
+                }}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(page);
+                  }}
+                  isActive={currentPage === page}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+
         {/* Visor PDF */}
         {selectedDocument && (
           <PDFViewer
@@ -254,7 +305,7 @@ export const DocumentExplorer = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockDocuments.map((doc) => (
+              {currentDocuments.map((doc) => (
                 <TableRow key={doc.id} className="hover:bg-muted/5">
                   <TableCell>
                     <div>
@@ -317,6 +368,48 @@ export const DocumentExplorer = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Paginación */}
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                if (currentPage > 1) setCurrentPage(currentPage - 1);
+              }}
+              className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <PaginationItem key={page}>
+              <PaginationLink
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentPage(page);
+                }}
+                isActive={currentPage === page}
+              >
+                {page}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          
+          <PaginationItem>
+            <PaginationNext 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+              }}
+              className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
 
       {/* Visor PDF */}
       {selectedDocument && (
